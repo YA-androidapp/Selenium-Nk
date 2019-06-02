@@ -72,11 +72,11 @@ def main():
         try:
             fox.set_window_size(1280, 720)
 
-            # Sign in
-            print('\tnkSigninUri: {} {}'.format(
-                nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
-            fox.get(nkSigninUri)
-            time.sleep(2)
+            # # Sign in
+            # print('\tnkSigninUri: {} {}'.format(
+            #     nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
+            # fox.get(nkSigninUri)
+            # time.sleep(2)
             # WebDriverWait(fox, WAITING_TIME).until(
             #     EC.presence_of_element_located((By.CLASS_NAME, 'btnM1')))
 
@@ -85,7 +85,7 @@ def main():
             # clickClassName(fox, 'btnM1')
             # print('btnM1', file=f)
 
-            # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
+            # # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
             # time.sleep(2)
             # WebDriverWait(fox, WAITING_TIME).until(
             #     EC.presence_of_element_located((By.CLASS_NAME, 'nui-type-base kxct')))
@@ -132,6 +132,24 @@ def main():
                 print(title, file=f)
                 print('\t' + uri, file=f)
                 print('\t' + pubdate, file=f)
+
+                # 検索
+                print('\tarticleUri: {} {}'.format(
+                    uri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
+                fox.get(uri)
+                time.sleep(2)
+                WebDriverWait(fox, WAITING_TIME).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, 'cmn-article_text')))
+                print('cmn-article_text', file=f)
+
+                # スクレイピング
+                source2 = fox.page_source
+                # BeautifulSoup(source2, 'html.parser')
+                bs2 = BeautifulSoup(source2, 'lxml')
+                print('article bs', file=f)
+
+                body = (bs2.find_all('div',attrs={'class':'cmn-article_text'}))[0]
+                print(body, file=f)
 
 
         except Exception as e:
