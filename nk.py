@@ -118,16 +118,18 @@ def main():
             print('count: {}'.format(count), file=f)
 
             # 記事毎に取得
-            cards = bs.find_all('div',class_='nui-card__main')
+            cards = bs.find_all('div', class_='nui-card__main')
             # if count == len(cards):
             #     print('count: {}'.format(count), file=f)
             print('count: {}'.format(len(cards)), file=f)
             for card in cards:
                 # print(card.text, file=f)
-                title = (card.find_all('h3',attrs={'class':'nui-card__title'}))[0]
+                title = (card.find_all('h3', attrs={
+                         'class': 'nui-card__title'}))[0]
                 uri = (title.find_all('a'))[0].get("href")
                 title = (title.find_all('a'))[0].get("title")
-                pubdate = (card.find_all('a',attrs={'class':'nui-card__meta-pubdate'}))[0]
+                pubdate = (card.find_all(
+                    'a', attrs={'class': 'nui-card__meta-pubdate'}))[0]
                 pubdate = (pubdate.find_all('time'))[0].get("datetime")
                 print(title, file=f)
                 print('\t' + uri, file=f)
@@ -139,18 +141,28 @@ def main():
                 fox.get(uri)
                 time.sleep(2)
                 WebDriverWait(fox, WAITING_TIME).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, 'cmn-article_text')))
-                print('cmn-article_text', file=f)
+                    EC.presence_of_element_located((By.XPATH, '/html/body')))
+                print('\tbody', file=f)
 
                 # スクレイピング
                 source2 = fox.page_source
                 # BeautifulSoup(source2, 'html.parser')
                 bs2 = BeautifulSoup(source2, 'lxml')
-                print('article bs', file=f)
+                print('\tarticle bs', file=f)
 
-                body = (bs2.find_all('div',attrs={'class':'cmn-article_text'}))[0]
-                print(body, file=f)
+                try:
+                    body = (bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')}))[0] if len(
+                        bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')})) > 0 else (bs2.find_all('div', attrs={
+                            'itemprop': 'articleBody'}))[0] if len(bs2.find_all('div', attrs={
+                                'itemprop': 'articleBody'})) > 0 else ''
+                    print(body, file=f)
+                except:
+                    pass
 
+                # li.page_nex_prev があればクリックして次のページへ進む
+
+                time.sleep(600)  # temp
+                break  # temp
 
         except Exception as e:
             print(e, file=f)
