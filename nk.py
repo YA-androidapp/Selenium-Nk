@@ -72,23 +72,21 @@ def main():
         try:
             fox.set_window_size(1280, 720)
 
-            # # Sign in
-            # print('\tnkSigninUri: {} {}'.format(
-            #     nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
-            # fox.get(nkSigninUri)
-            # time.sleep(2)
-            # WebDriverWait(fox, WAITING_TIME).until(
-            #     EC.presence_of_element_located((By.CLASS_NAME, 'btnM1')))
+            # Sign in
+            print('\tnkSigninUri: {} {}'.format(
+                nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
+            fox.get(nkSigninUri)
+            time.sleep(2)
+            WebDriverWait(fox, WAITING_TIME).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'btnM1')))
 
-            # clearAndSendKeys(fox, 'LA7010Form01:LA7010Email', nkId)
-            # clearAndSendKeys(fox, 'LA7010Form01:LA7010Password', nkPw)
-            # clickClassName(fox, 'btnM1')
-            # print('btnM1', file=f)
+            clearAndSendKeys(fox, 'LA7010Form01:LA7010Email', nkId)
+            clearAndSendKeys(fox, 'LA7010Form01:LA7010Password', nkPw)
+            clickClassName(fox, 'btnM1')
+            print('btnM1', file=f)
 
-            # # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
-            # time.sleep(2)
-            # WebDriverWait(fox, WAITING_TIME).until(
-            #     EC.presence_of_element_located((By.CLASS_NAME, 'nui-type-base kxct')))
+            # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
+            time.sleep(2)
 
             # 検索
             print('\tnkSearchUri: {} {}'.format(
@@ -132,37 +130,49 @@ def main():
                     'a', attrs={'class': 'nui-card__meta-pubdate'}))[0]
                 pubdate = (pubdate.find_all('time'))[0].get("datetime")
                 print(title, file=f)
-                print('\t' + uri, file=f)
-                print('\t' + pubdate, file=f)
+                print('\turi: ' + uri, file=f)
+                print('\tpubdate: ' + pubdate, file=f)
 
-                # 検索
+                # 記事の1ページ目
                 print('\tarticleUri: {} {}'.format(
                     uri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
                 fox.get(uri)
-                time.sleep(2)
-                WebDriverWait(fox, WAITING_TIME).until(
-                    EC.presence_of_element_located((By.XPATH, '/html/body')))
-                print('\tbody', file=f)
 
-                # スクレイピング
-                source2 = fox.page_source
-                # BeautifulSoup(source2, 'html.parser')
-                bs2 = BeautifulSoup(source2, 'lxml')
-                print('\tarticle bs', file=f)
+                # 記事のページ毎に取得
+                while True:
+                    # ロード完了を待つ
+                    time.sleep(2)
+                    WebDriverWait(fox, WAITING_TIME).until(
+                        EC.presence_of_element_located((By.XPATH, '/html/body')))
+                    print('\thtmlbody', file=f)
 
-                try:
-                    body = (bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')}))[0] if len(
-                        bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')})) > 0 else (bs2.find_all('div', attrs={
-                            'itemprop': 'articleBody'}))[0] if len(bs2.find_all('div', attrs={
-                                'itemprop': 'articleBody'})) > 0 else ''
-                    print(body, file=f)
-                except:
-                    pass
+                    # スクレイピング
+                    source2 = fox.page_source
+                    # BeautifulSoup(source2, 'html.parser')
+                    bs2 = BeautifulSoup(source2, 'lxml')
+                    print('\tarticle bs', file=f)
 
-                # li.page_nex_prev があればクリックして次のページへ進む
+                    try:
+                        body = (bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')}))[0] if len(
+                            bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')})) > 0 else (bs2.find_all('div', attrs={
+                                'itemprop': 'articleBody'}))[0] if len(bs2.find_all('div', attrs={
+                                    'itemprop': 'articleBody'})) > 0 else ''
+                        print('\tbody: {}'.format(
+                            body.replace('\n', '\\n')), file=f)
+                    except:
+                        pass
 
-                time.sleep(600)  # temp
-                break  # temp
+                    # li.page_nex_prev があればクリックして次のページへ進む
+                    nextpages = bs2.find_all(
+                        'ul', attrs={'class': re.compile('pagination_article_detail')})
+                    print('\tnextpages: {}'.format(len(nextpages)), file=f)
+                    if len(nextpages) > 0:
+                        clickLink(fox, re.compile('次へ'))
+                    else:
+                        break
+
+                    # time.sleep(600)
+                    # break
 
         except Exception as e:
             print(e, file=f)
