@@ -121,80 +121,85 @@ def main():
             #     print('count: {}'.format(count), file=f)
             print('count: {}'.format(len(cards)), file=f)
             for card in cards:
-                # print(card.text, file=f)
-                title = (card.find_all('h3', attrs={
-                         'class': 'nui-card__title'}))[0]
-                uri = (title.find_all('a'))[0].get("href")
-                title = (title.find_all('a'))[0].get("title")
-                pubdate = (card.find_all(
-                    'a', attrs={'class': 'nui-card__meta-pubdate'}))[0]
-                pubdate = (pubdate.find_all('time'))[0].get("datetime")
-                print(title, file=f)
-                print('\turi: ' + uri, file=f)
-                print('\tpubdate: ' + pubdate, file=f)
+                try:
+                    # print(card.text, file=f)
+                    title = (card.find_all('h3', attrs={
+                        'class': 'nui-card__title'}))[0]
+                    uri = (title.find_all('a'))[0].get("href")
+                    title = (title.find_all('a'))[0].get("title")
+                    pubdate = (card.find_all(
+                        'a', attrs={'class': 'nui-card__meta-pubdate'}))[0]
+                    pubdate = (pubdate.find_all('time'))[0].get("datetime")
+                    print(title, file=f)
+                    print('\turi: ' + uri, file=f)
+                    print('\tpubdate: ' + pubdate, file=f)
 
-                # 記事の1ページ目
-                print('\tarticleUri: {} {}'.format(
-                    uri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
-                fox.get(uri)
+                    # 記事の1ページ目
+                    print('\tarticleUri: {} {}'.format(
+                        uri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
+                    fox.get(uri)
 
-                # 記事のページ毎に取得
-                while True:
-                    # ロード完了を待つ
-                    time.sleep(2)
-                    WebDriverWait(fox, WAITING_TIME).until(
-                        EC.presence_of_element_located((By.XPATH, '/html/body')))
-                    print('\thtmlbody', file=f)
+                    # 記事のページ毎に取得
+                    while True:
+                        try:
+                            # ロード完了を待つ
+                            time.sleep(2)
+                            WebDriverWait(fox, WAITING_TIME).until(
+                                EC.presence_of_element_located((By.XPATH, '/html/body')))
+                            print('\thtmlbody', file=f)
 
-                    # スクレイピング
-                    source2 = fox.page_source
-                    # BeautifulSoup(source2, 'html.parser')
-                    bs2 = BeautifulSoup(source2, 'lxml')
-                    print('\tarticle bs', file=f)
+                            # スクレイピング
+                            source2 = fox.page_source
+                            # BeautifulSoup(source2, 'html.parser')
+                            bs2 = BeautifulSoup(source2, 'lxml')
+                            print('\tarticle bs', file=f)
 
-                    try:
-                        body = (bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')}))[0] if len(
-                            bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')})) > 0 else (bs2.find_all('div', attrs={
-                                'itemprop': 'articleBody'}))[0] if len(bs2.find_all('div', attrs={
-                                    'itemprop': 'articleBody'})) > 0 else ''
-                        print('\tbody: {}'.format(
-                            body.replace('\n', '\\n')), file=f)
-                    except:
-                        pass
+                            try:
+                                body = (bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')}))[0] if len(
+                                    bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')})) > 0 else (bs2.find_all('div', attrs={
+                                        'itemprop': 'articleBody'}))[0] if len(bs2.find_all('div', attrs={
+                                            'itemprop': 'articleBody'})) > 0 else ''
+                                print('\tbody: {}'.format(
+                                    body.replace('\n', '\\n')), file=f)
+                            except:
+                                pass
 
-                    # li.page_nex_prev があればクリックして次のページへ進む
-                    nextpages = bs2.find_all(
-                        'ul', attrs={'class': re.compile('pagination_article_detail')})
-                    print('\tnextpages: {}'.format(len(nextpages)), file=f)
-                    if len(nextpages) > 0:
-                        clickLink(fox, re.compile('次へ'))
-                    else:
-                        break
+                            # li.page_nex_prev があればクリックして次のページへ進む
+                            nextpages = bs2.find_all(
+                                'ul', attrs={'class': re.compile('pagination_article_detail')})
+                            print('\tnextpages: {}'.format(
+                                len(nextpages)), file=f)
+                            if len(nextpages) > 0:
+                                clickLink(fox, '次へ')
+                            else:
+                                break
 
-                    # time.sleep(600)
-                    # break
+                            # time.sleep(600)
+                            # break
+                        except Exception as e:
+                            print(e, file=f)
+                except Exception as e:
+                    print(e, file=f)
 
         except Exception as e:
             print(e, file=f)
-            exit
+        finally:
+            # ログアウトページ
+            try:
+                print('\tlogout: {}'.format(
+                    datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
+                fox.get('https://regist.nikkei.com/ds/etc/accounts/logout')
+            except:
+                pass
 
-        # page = 0
-        # while True:
-        #     source = retrieve(fox, uri)
-        #     for i in bs.find_all('div', class_='tweet'):
-        #         text = i.getText()
-        #         print(text, file=f)
-        #         print('\t\tText\t{}'.format(text.replace('\n', '<br>')), file=f)
-
-        # 終了時の後片付け
-        fox.close()
-        try:
-            fox.quit()
-        except:
-            pass
-
-        print('Done: {}'.format(
-            datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
+            # 終了時の後片付け
+            try:
+                fox.close()
+                fox.quit()
+                print('Done: {}'.format(
+                    datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=f)
+            except:
+                pass
 
 
 def clickClassName(fox, className):
