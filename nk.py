@@ -165,12 +165,33 @@ def main():
                                 print('\tarticle bs', file=logfile, flush=True)
 
                                 try:
-                                    bodyclass = (bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')}))[0] if len(
-                                        bs2.find_all('div', attrs={'class': re.compile('cmn-article_text')})) > 0 else (bs2.find_all('div', attrs={
-                                            'itemprop': 'articleBody'}))[0] if len(bs2.find_all('div', attrs={
-                                                'itemprop': 'articleBody'})) > 0 else ''
-                                    print('\tbodyclass: {}'.format(bodyclass),
-                                          file=logfile, flush=True)
+                                    bodyclass = ''
+                                    try:
+                                        cmn_article_text = bs2.find_all(
+                                            'div', attrs={'class': re.compile('cmn-article_text')})
+                                        print('cmn_article_text: {}'.format(
+                                            cmn_article_text))
+                                    except:
+                                        cmn_article_text = None
+
+                                    if len(cmn_article_text) > 0:
+                                        bodyclass = cmn_article_text[0].text
+                                    else:
+                                        try:
+                                            articleBody = bs2.find_all(
+                                                'div', attrs={'itemprop': 'articleBody'})
+                                            print('articleBody: {}'.format(
+                                                articleBody))
+                                        except:
+                                            articleBody = None
+
+                                        if len(articleBody) > 0:
+                                            bodyclass = cmn_article_text[0].text
+                                        else:
+                                            bodyclass = ''
+
+                                    print('\tbodyclass: {}'.format(
+                                        bodyclass), file=logfile, flush=True)
                                     body += bodyclass.replace('\n', '\\n')
                                     print('\t\tbody: {}'.format(body),
                                           file=logfile, flush=True)
