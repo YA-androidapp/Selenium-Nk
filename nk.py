@@ -169,32 +169,36 @@ def main():
                                     try:
                                         cmn_article_text = bs2.find_all(
                                             'div', attrs={'class': re.compile('cmn-article_text')})
-                                        print('cmn_article_text: {}'.format(
-                                            cmn_article_text))
+                                        # print('cmn_article_text: {}'.format(
+                                        #     cmn_article_text))
                                     except:
                                         cmn_article_text = None
 
                                     if len(cmn_article_text) > 0:
                                         bodyclass = cmn_article_text[0].text
+                                        # print('cmn_article_text[0]: {}'.format(
+                                        #     cmn_article_text[0]))
                                     else:
                                         try:
                                             articleBody = bs2.find_all(
                                                 'div', attrs={'itemprop': 'articleBody'})
-                                            print('articleBody: {}'.format(
-                                                articleBody))
+                                            # print('articleBody: {}'.format(
+                                            #     articleBody))
                                         except:
                                             articleBody = None
 
                                         if len(articleBody) > 0:
-                                            bodyclass = cmn_article_text[0].text
+                                            bodyclass = articleBody[0].text
+                                            # print('articleBody[0]: {}'.format(
+                                            #     articleBody[0]))
                                         else:
                                             bodyclass = ''
 
                                     print('\tbodyclass: {}'.format(
                                         bodyclass), file=logfile, flush=True)
-                                    body += bodyclass.replace('\n', '\\n')
-                                    print('\t\tbody: {}'.format(body),
-                                          file=logfile, flush=True)
+                                    body += bodyclass.strip().replace('\n', '\\n')
+                                    # print('\t\tbody: {}'.format(body),
+                                    #       file=logfile, flush=True)
                                 except Exception as e:
                                     print(e, file=logfile, flush=True)
 
@@ -218,7 +222,7 @@ def main():
                                 break
 
                         # データファイルに出力
-                        print("{}\t\t{}\t\t{}\t\t{}\n".format(
+                        print('{}\t\t{}\t\t{}\t\t{}'.format(
                             title, pubdate, uri, body), file=datafile, flush=True)
                     except Exception as e:
                         print(e, file=logfile, flush=True)
