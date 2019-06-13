@@ -118,6 +118,13 @@ def main():
                         count = int(c)
                 print('count: {}'.format(count), file=logfile, flush=True)
 
+                # 200件以前と201件以降で取得方法が若干異なる
+                page = 0
+                maxpage = -((-1 * count) // 200)
+                for i in range(0, maxpage):
+                    print(i)
+                    #TODO
+
                 # 記事毎に取得
                 cards = bs.find_all('div', class_='nui-card__main')
                 # if count == len(cards):
