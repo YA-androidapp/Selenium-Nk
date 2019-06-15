@@ -83,7 +83,7 @@ def main():
                 print('\tnkSigninUri: {} {}'.format(
                     nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
                 fox.get(nkSigninUri)
-                time.sleep(1)
+                time.sleep(3)
                 WebDriverWait(fox, WAITING_TIME).until(
                     EC.presence_of_element_located((By.CLASS_NAME, 'btnM1')))
 
@@ -93,17 +93,17 @@ def main():
                 print('btnM1', file=logfile, flush=True)
 
                 # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
-                time.sleep(1)
+                time.sleep(3)
 
                 # 検索
                 print('\tnkSearchUri: {} {}'.format(
                     nkSearchUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
                 fox.get(nkSearchUri)
-                time.sleep(1)
+                time.sleep(3)
                 WebDriverWait(fox, WAITING_TIME).until(
                     EC.presence_of_element_located((By.CLASS_NAME, 'search__result-footer')))
                 print('search__result-footer', file=logfile, flush=True)
-                # time.sleep(1)
+                # time.sleep(3)
 
                 # スクレイピング
                 source = fox.page_source
@@ -187,7 +187,7 @@ def main():
                             while True:
                                 try:
                                     # ロード完了を待つ
-                                    time.sleep(1)
+                                    time.sleep(3)
                                     WebDriverWait(fox, WAITING_TIME).until(
                                         EC.presence_of_element_located((By.XPATH, '/html/body')))
                                     print('\thtmlbody', file=logfile, flush=True)
