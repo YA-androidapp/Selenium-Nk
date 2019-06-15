@@ -53,7 +53,7 @@ searchTerm = 'ブロックチェーン'
 encodedTerm = urllib.parse.quote(searchTerm)
 nkBaseUri = 'https://r.nikkei.com/'
 nkSigninUri = nkBaseUri + 'login'
-nkSearchUri = nkBaseUri + 'search?keyword=' + searchTerm + '&volume=200'
+nkSearchUri = nkBaseUri + 'search?keyword=' + encodedTerm + '&volume=200'
 
 
 # スクショ保存時のファイル名を生成
@@ -83,7 +83,7 @@ def main():
                 print('\tnkSigninUri: {} {}'.format(
                     nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
                 fox.get(nkSigninUri)
-                time.sleep(2)
+                time.sleep(1)
                 WebDriverWait(fox, WAITING_TIME).until(
                     EC.presence_of_element_located((By.CLASS_NAME, 'btnM1')))
 
@@ -93,17 +93,17 @@ def main():
                 print('btnM1', file=logfile, flush=True)
 
                 # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
-                time.sleep(2)
+                time.sleep(1)
 
                 # 検索
                 print('\tnkSearchUri: {} {}'.format(
                     nkSearchUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
                 fox.get(nkSearchUri)
-                time.sleep(2)
+                time.sleep(1)
                 WebDriverWait(fox, WAITING_TIME).until(
                     EC.presence_of_element_located((By.CLASS_NAME, 'search__result-footer')))
                 print('search__result-footer', file=logfile, flush=True)
-                # time.sleep(2)
+                # time.sleep(1)
 
                 # スクレイピング
                 source = fox.page_source
@@ -129,16 +129,17 @@ def main():
 
                     if i > 0:
                         nkJsonUri = nkBaseUri + '.resources/search/partials?keyword=' + \
-                            searchTerm + '&offset=' + \
+                            encodedTerm + '&offset=' + \
                             str(200*i) + '&volume=200'
                         print('nkJsonUri: {}'.format(nkJsonUri),
                               file=logfile, flush=True)
                         try:
                             res = urllib.request.urlopen(nkJsonUri)
+                            print('res: {}'.format(nkJsonUri),file=logfile, flush=True)
                             data = json.loads(res.read().decode('utf-8'))
+                            print('data: {}'.format(nkJsonUri),file=logfile, flush=True)
                             source = data['html']
-                            print('source: {}'.format(source.replace(
-                                '\n', '\\n')), file=logfile, flush=True)
+                            print('source: {}'.format(nkJsonUri),file=logfile, flush=True)
                             bs = BeautifulSoup(source, 'lxml')
                             print('bs {}'.format(i), file=logfile, flush=True)
                         except urllib.error.HTTPError as e:
@@ -186,7 +187,7 @@ def main():
                             while True:
                                 try:
                                     # ロード完了を待つ
-                                    time.sleep(2)
+                                    time.sleep(1)
                                     WebDriverWait(fox, WAITING_TIME).until(
                                         EC.presence_of_element_located((By.XPATH, '/html/body')))
                                     print('\thtmlbody', file=logfile, flush=True)
