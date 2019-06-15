@@ -1,5 +1,7 @@
 .vscode
 geckodriver.log
-data*.txt
+nk*.txt
+tk*.txt
 log*.txt
+data*.txt
 setting.ini

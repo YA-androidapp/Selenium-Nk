@@ -32,7 +32,7 @@ print(os.getcwd())
 
 # 定数
 DATA_FILEPATH = os.path.join(
-    currentdirectory, 'data'+datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt')
+    currentdirectory, 'tk'+datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt')
 LOG_FILEPATH = os.path.join(
     currentdirectory, 'log'+datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt')
 
@@ -122,19 +122,44 @@ def main():
                                 # print('article: {}'.format(article.text),
                                 #       file=logfile, flush=True)
 
-                                uri = (article.find_all('a'))[0].get("href")
+                                uri = ''
+                                try:
+                                    uri_a = article.find_all('a')
+                                except:
+                                    uri_a = None
+                                if len(uri_a) > 0:
+                                    uri = uri_a[0].get("href")
                                 if not uri.startswith(tkBaseUri):
                                     uri = tkBaseUri + uri
-                                title = (article.find_all('span', attrs={
-                                    'class': 'column-main-ttl'}))[0].text
-                                pubdate = (article.find_all(
-                                    'span', attrs={'class': 'date'}))[0].text
+
+                                title = ''
+                                try:
+                                    column_main_ttl = article.find_all(
+                                        'span', attrs={'class': 'column-main-ttl'})
+                                except:
+                                    column_main_ttl = None
+                                if len(column_main_ttl) > 0:
+                                    title = column_main_ttl[0].text
+                                else:
+                                    title = ''
+
+                                # pubdate = ''
+                                # try:
+                                #     span_date = article.find_all(
+                                #         'span', attrs={'class': 'date'})
+                                # except:
+                                #     span_date = None
+                                # if len(span_date) > 0:
+                                #     pubdate = span_date[0].text
+                                # else:
+                                #     pubdate = ''
+
                                 print('title: {}'.format(title),
                                       file=logfile, flush=True)
                                 print('\turi: {}'.format(uri),
                                       file=logfile, flush=True)
-                                print('\tpubdate: {}'.format(pubdate),
-                                      file=logfile, flush=True)
+                                # print('\tpubdate: {}'.format(pubdate),
+                                #       file=logfile, flush=True)
 
                                 # ロード完了を待つ
                                 fox.get(uri)
@@ -166,34 +191,58 @@ def main():
 
                                 body = body.strip().replace('\n', '\\n')
                                 print('\t\tbody: {}'.format(body),
-                                        file=logfile, flush=True)
+                                      file=logfile, flush=True)
+
+                                # if pubdate == '':
+                                pubdate = ''
+                                try:
+                                    span_date = article.find_all(
+                                        'span', attrs={'class': 'date'})
+                                except:
+                                    span_date = None
+                                if len(span_date) > 0:
+                                    pubdate = span_date[0].text
+                                else:
+                                    pubdate = ''
+                                print('\tpubdate: {}'.format(pubdate),
+                                      file=logfile, flush=True)
+
+                                author = ''
+                                try:
+                                    div_author = article.find_all(
+                                        'div', attrs={'class': 'author'})
+                                except:
+                                    div_author = None
+                                if len(div_author) > 0:
+                                    author = div_author[0].text.replace(
+                                        '\n', '\\n')
+                                else:
+                                    author = ''
+                                print('\tauthor: {}'.format(author),
+                                      file=logfile, flush=True)
 
                                 # データファイルに出力
-                                print('{}\t\t{}\t\t{}\t\t{}'.format(
-                                    title, pubdate, uri, body), file=datafile, flush=True)
+                                print('{}\t\t{}\t\t{}\t\t{}\t\t{}'.format(
+                                    title, pubdate, uri, author, body), file=datafile, flush=True)
 
-                                return #TODO
                             except Exception as e:
                                 print(e, file=logfile, flush=True)
-                                # pass
-                                return  # TODO
 
                         # 次のページへ進む
                         try:
-                            fox.get(tkSearchUri + '&page={}'.format(pageNum)) #TODO: page
+                            fox.get(tkSearchUri + '&page={}'.format(pageNum))
                             time.sleep(2)
                             WebDriverWait(fox, WAITING_TIME).until(
                                 EC.presence_of_element_located((By.CLASS_NAME, 'current')))
                             print('current', file=logfile, flush=True)
                             time.sleep(1)
-                        except:
-                            pass
+                        except Exception as e:
+                            print(e, file=logfile, flush=True)
 
                         # time.sleep(600)
                         # break
                     except Exception as e:
                         print(e, file=logfile, flush=True)
-                        return  # TODO
 
             except Exception as e:
                 print(e, file=logfile, flush=True)
