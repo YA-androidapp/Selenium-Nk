@@ -203,7 +203,7 @@ def main():
                                         bodyclass = ''
                                         try:
                                             cmn_article_text = bs2.find_all(
-                                                'div', attrs={'class': re.compile('cmn-article_text')})
+                                                'div', attrs={'class': re.compile('.*?cmn-article_text.*?')})
                                             # print('cmn_article_text: {}'.format(
                                             #     cmn_article_text))
                                         except:
@@ -239,7 +239,7 @@ def main():
 
                                     # li.page_nex_prev があればクリックして次のページへ進む
                                     nextpages = bs2.find_all(
-                                        'ul', attrs={'class': re.compile('pagination_article_detail')})
+                                        'ul', attrs={'class': re.compile('.*?pagination_article_detail.*?')})
                                     print('\tnextpages: {} {}'.format(
                                         len(nextpages), nextpages), file=logfile, flush=True)
                                     if len(nextpages) > 0:
