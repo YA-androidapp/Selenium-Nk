@@ -236,6 +236,14 @@ def main():
                                 EC.presence_of_element_located((By.CLASS_NAME, 'current')))
                             print('current', file=logfile, flush=True)
                             time.sleep(1)
+
+                            # スクレイピング
+                            source = fox.page_source
+                            # BeautifulSoup(source, 'html.parser')
+                            bs = BeautifulSoup(source, 'lxml')
+                            print('bs', file=logfile, flush=True)
+                            # print(source, file=logfile, flush=True)
+
                         except Exception as e:
                             print(e, file=logfile, flush=True)
 
