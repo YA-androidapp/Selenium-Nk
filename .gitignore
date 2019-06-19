@@ -1,4 +1,5 @@
 .vscode
+*.bak
 geckodriver.log
 nk*.txt
 tk*.txt
