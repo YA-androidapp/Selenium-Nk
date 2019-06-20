@@ -52,22 +52,22 @@ WAITING_TIME = 10000
 nkRBaseUri = 'https://r.nikkei.com/'
 nkSigninUri = nkRBaseUri + 'login'
 
-nkBaseUri = 'https://www.nikkei.com/'
+nkBaseUri = 'https://www.nikkei.com'
 nkcategoryUris = [
-    nkBaseUri + 'economy/archive/',
-    nkBaseUri + 'business/archive/',
-    nkBaseUri + 'markets/archive/',
-    nkBaseUri + 'technology/archive/',
-    nkBaseUri + 'international/archive/',
-    nkBaseUri + 'sports/archive/',
-    nkBaseUri + 'society/archive/',
-    nkBaseUri + 'local/archive/',
-    nkBaseUri + 'opinion/archive/',
-    nkBaseUri + 'culture/archive/'
+    nkBaseUri + '/economy/archive/',
+    nkBaseUri + '/business/archive/',
+    nkBaseUri + '/markets/archive/',
+    nkBaseUri + '/technology/archive/',
+    # nkBaseUri + '/international/archive/',
+    # nkBaseUri + '/sports/archive/',
+    # nkBaseUri + '/society/archive/',
+    # nkBaseUri + '/local/archive/',
+    # nkBaseUri + '/opinion/archive/',
+    # nkBaseUri + '/culture/archive/'
 ]
 
 # カテゴリ毎に、取得するページ数
-MAX_PAGE_PER_CATEGORY = 20
+MAX_PAGE_PER_CATEGORY = 2
 
 
 # スクショ保存時のファイル名を生成
@@ -93,26 +93,30 @@ def main():
             try:
                 fox.set_window_size(1280, 720)
 
-                # Sign in
-                print('\tnkSigninUri: {} {}'.format(
-                    nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
-                fox.get(nkSigninUri)
-                time.sleep(3)
-                WebDriverWait(fox, WAITING_TIME).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, 'btnM1')))
+                # # Sign in
+                # print('\tnkSigninUri: {} {}'.format(
+                #     nkSigninUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
+                # fox.get(nkSigninUri)
+                # time.sleep(3)
+                # WebDriverWait(fox, WAITING_TIME).until(
+                #     EC.presence_of_element_located((By.CLASS_NAME, 'btnM1')))
 
-                clearAndSendKeys(fox, 'LA7010Form01:LA7010Email', nkId)
-                clearAndSendKeys(fox, 'LA7010Form01:LA7010Password', nkPw)
-                clickClassName(fox, 'btnM1')
-                print('btnM1', file=logfile, flush=True)
+                # clearAndSendKeys(fox, 'LA7010Form01:LA7010Email', nkId)
+                # clearAndSendKeys(fox, 'LA7010Form01:LA7010Password', nkPw)
+                # clickClassName(fox, 'btnM1')
+                # print('btnM1', file=logfile, flush=True)
 
-                # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
-                time.sleep(3)
+                # # https://r.nikkei.com/に遷移するので、フッタが読み込まれるまで待機
+                # time.sleep(3)
+                # # Sign in
 
                 # カテゴリごとに記事一覧を取得
                 for nkCatUri in nkcategoryUris:
                     print('\tnkCatUri: {} {}'.format(
                         nkCatUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
+
+                    category = (nkCatUri.split(nkBaseUri + '/')[1]).split('/archive/')[0]
+
                     fox.get(nkCatUri)
                     time.sleep(3)
                     WebDriverWait(fox, WAITING_TIME).until(
@@ -120,15 +124,26 @@ def main():
                     print('m-pageNation', file=logfile, flush=True)
                     # time.sleep(3)
 
-                    # スクレイピング
-                    source = fox.page_source
-                    # BeautifulSoup(source, 'html.parser')
-                    bs = BeautifulSoup(source, 'lxml')
-                    print('bs', file=logfile, flush=True)
-                    # print(source, file=logfile, flush=True)
-
                     for i in range(0, MAX_PAGE_PER_CATEGORY):
                         print('i: {}'.format(i), file=logfile, flush=True)
+
+                        # スクレイピング
+                        if i > 0:
+                            nkCatUri = nkCatUri.split(
+                                '?bn=')[0] + '?bn='+str(i)+'1'
+                            print('\tnkCatUri: {} {}'.format(
+                                nkCatUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
+                            fox.get(nkCatUri)
+                            time.sleep(3)
+                            WebDriverWait(fox, WAITING_TIME).until(
+                                EC.presence_of_element_located((By.CLASS_NAME, 'm-pageNation')))
+                            print('m-pageNation', file=logfile, flush=True)
+
+                        source = fox.page_source
+                        # BeautifulSoup(source, 'html.parser')
+                        bs = BeautifulSoup(source, 'lxml')
+                        print('bs', file=logfile, flush=True)
+                        # print(source, file=logfile, flush=True)
 
                         # 記事毎に取得
                         contents = (bs.find_all('div', id='CONTENTS_MAIN'))
@@ -152,6 +167,7 @@ def main():
                                 titleclass = (card.find_all('h3', attrs={
                                     'class': 'm-miM09_title'}))[0]
                                 uri = (titleclass.find_all('a'))[0].get("href")
+                                uri = nkBaseUri + uri
                                 title = (titleclass.find_all('span', attrs={
                                          'class': 'm-miM09_titleL'}))[0].text
                                 pubdate = (card.find_all('span', attrs={
@@ -161,9 +177,6 @@ def main():
                                 print('\turi: ' + uri, file=logfile, flush=True)
                                 print('\tpubdate: ' + pubdate,
                                       file=logfile, flush=True)
-
-                                time.sleep(300)  # TODO
-                                exit
 
                                 # 記事の1ページ目
                                 print('\tarticleUri: {} {}'.format(
@@ -245,16 +258,13 @@ def main():
                                         break
 
                                 # データファイルに出力
-                                print('{}\t\t{}\t\t{}\t\t{}'.format(
-                                    title, pubdate, uri, body), file=datafile, flush=True)
+                                print('{}\t\t{}\t\t{}\t\t{}\t\t{}'.format(
+                                    category, title, pubdate, uri, body), file=datafile, flush=True)
                             except Exception as e:
                                 print(e, file=logfile, flush=True)
 
             except Exception as e:
                 print(e, file=logfile, flush=True)
-
-                time.sleep(300)  # TODO
-                exit
             finally:
                 # ログアウトページ
                 try:
