@@ -42,7 +42,7 @@ nkPw = inifile.get('Nk', 'pw')
 
 # 定数
 DATA_FILEPATH = os.path.join(
-    currentdirectory, 'nkc'+datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt')
+    currentdirectory, 'nkm'+datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt')
 LOG_FILEPATH = os.path.join(
     currentdirectory, 'log'+datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt')
 
@@ -53,21 +53,15 @@ nkRBaseUri = 'https://r.nikkei.com/'
 nkSigninUri = nkRBaseUri + 'login'
 
 nkBaseUri = 'https://www.nikkei.com'
-nkcategoryUris = [
-    nkBaseUri + '/economy/archive/',
-    nkBaseUri + '/business/archive/',
-    # nkBaseUri + '/markets/archive/',
-    nkBaseUri + '/technology/archive/',
-    nkBaseUri + '/international/archive/',
-    nkBaseUri + '/sports/archive/',
-    nkBaseUri + '/society/archive/',
-    nkBaseUri + '/local/archive/',
-    nkBaseUri + '/opinion/archive/',
-    nkBaseUri + '/culture/archive/'
+nkmarketUris = [
+    nkBaseUri + '/markets/kabu/index/?uah=DF_SEC8_C1_020',
+    nkBaseUri + '/markets/kawase/index/?uah=DF_SEC8_C3_020',
+    nkBaseUri + '/markets/kigyo/index/?uah=DF_SEC8_C2_060',
+    nkBaseUri + '/markets/shohin/index/?uah=DF_SEC8_C4_020'
 ]
 
 # カテゴリ毎に、取得するページ数
-MAX_PAGE_PER_CATEGORY = 20
+MAX_PAGE_PER_CATEGORY = 7
 
 
 # スクショ保存時のファイル名を生成
@@ -111,13 +105,13 @@ def main():
                 # Sign in
 
                 # カテゴリごとに記事一覧を取得
-                for nkCatUri in nkcategoryUris:
-                    print('\tnkCatUri: {} {}'.format(
-                        nkCatUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
+                for nkmarketUri in nkmarketUris:
+                    print('\tnkmarketUri: {} {}'.format(
+                        nkmarketUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
 
-                    category = (nkCatUri.split(nkBaseUri + '/')[1]).split('/archive/')[0]
+                    category = (nkmarketUri.split(nkBaseUri + '/markets/')[1]).split('/index/')[0]
 
-                    fox.get(nkCatUri)
+                    fox.get(nkmarketUri)
                     time.sleep(1)
                     WebDriverWait(fox, WAITING_TIME).until(
                         EC.presence_of_element_located((By.CLASS_NAME, 'm-pageNation')))
@@ -129,15 +123,16 @@ def main():
 
                         # スクレイピング
                         if i > 0:
-                            nkCatUri = nkCatUri.split(
-                                '?bn=')[0] + '?bn='+str(i)+'1'
-                            print('\tnkCatUri: {} {}'.format(
-                                nkCatUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
-                            fox.get(nkCatUri)
+                            nkmarketUri = nkmarketUri.split(
+                                '&bn=')[0] + '&bn='+str(3*i)+'1'
+                            print('\tnkmarketUri: {} {}'.format(
+                                nkmarketUri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
+                            fox.get(nkmarketUri)
                             time.sleep(1)
                             WebDriverWait(fox, WAITING_TIME).until(
-                                EC.presence_of_element_located((By.CLASS_NAME, 'm-pageNation')))
-                            print('m-pageNation', file=logfile, flush=True)
+                                EC.presence_of_element_located((By.XPATH, '/html/body')))
+                            print('\thtmlbody',
+                                    file=logfile, flush=True)
 
                         source = fox.page_source
                         # BeautifulSoup(source, 'html.parser')
@@ -146,14 +141,16 @@ def main():
                         # print(source, file=logfile, flush=True)
 
                         # 記事毎に取得
-                        contents = (bs.find_all('div', id='CONTENTS_MAIN'))
+                        contents = (bs.find_all('div', id='CONTENTS_MARROW'))
                         print('i: {} ; contents: {}'.format(i, len(contents)),
                               file=logfile, flush=True)
                         if len(contents) == 0:
                             continue
-                        cards = contents[0].find_all('div', class_='m-miM09')
+                        cards = contents[0].find_all('li', class_='m-article_list_title')
                         print('i: {} ; count: {}'.format(i, len(cards)),
                               file=logfile, flush=True)
+                        if len(cards) == 0:
+                            continue
 
                         for card in cards:
                             # 明示的に初期化
@@ -164,14 +161,13 @@ def main():
 
                             try:
                                 # print(card.text, file=logfile, flush=True)
-                                titleclass = (card.find_all('h3', attrs={
-                                    'class': 'm-miM09_title'}))[0]
+                                titleclass = (card.find_all('h4', attrs={
+                                    'class': 'm-article_title'}))[0]
                                 uri = (titleclass.find_all('a'))[0].get("href")
                                 uri = nkBaseUri + uri
-                                title = (titleclass.find_all('span', attrs={
-                                         'class': 'm-miM09_titleL'}))[0].text
+                                title = (titleclass.find_all('span'))[0].text
                                 pubdate = (card.find_all('span', attrs={
-                                           'class': 'm-miM09_date'}))[0].text
+                                           'class': 'm-article_title-time'}))[0].text
                                 print('\ttitle: ' + title,
                                       file=logfile, flush=True)
                                 print('\turi: ' + uri, file=logfile, flush=True)
@@ -183,83 +179,61 @@ def main():
                                     uri, datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')), file=logfile, flush=True)
                                 fox.get(uri)
 
-                                # 記事のページ毎に取得
-                                while True:
+                                # ロード完了を待つ
+                                time.sleep(1)
+                                WebDriverWait(fox, WAITING_TIME).until(
+                                    EC.presence_of_element_located((By.XPATH, '/html/body')))
+                                print('\thtmlbody',
+                                        file=logfile, flush=True)
+
+                                # スクレイピング
+                                source2 = fox.page_source
+                                # BeautifulSoup(source2, 'html.parser')
+                                bs2 = BeautifulSoup(source2, 'lxml')
+                                print('\tarticle bs',
+                                        file=logfile, flush=True)
+
+                                try:
+                                    bodyclass = ''
                                     try:
-                                        # ロード完了を待つ
-                                        time.sleep(1)
-                                        WebDriverWait(fox, WAITING_TIME).until(
-                                            EC.presence_of_element_located((By.XPATH, '/html/body')))
-                                        print('\thtmlbody',
-                                              file=logfile, flush=True)
+                                        cmn_article_text = bs2.find_all(
+                                            'div', attrs={'class': re.compile('.*?cmn-article_text.*?')})
+                                        # print('cmn_article_text: {}'.format(
+                                        #     cmn_article_text))
+                                    except:
+                                        cmn_article_text = None
 
-                                        # スクレイピング
-                                        source2 = fox.page_source
-                                        # BeautifulSoup(source2, 'html.parser')
-                                        bs2 = BeautifulSoup(source2, 'lxml')
-                                        print('\tarticle bs',
-                                              file=logfile, flush=True)
-
+                                    if len(cmn_article_text) > 0:
+                                        bodyclass = cmn_article_text[0].text
+                                        # print('cmn_article_text[0]: {}'.format(
+                                        #     cmn_article_text[0]))
+                                    else:
                                         try:
-                                            bodyclass = ''
-                                            try:
-                                                cmn_article_text = bs2.find_all(
-                                                    'div', attrs={'class': re.compile('.*?cmn-article_text.*?')})
-                                                # print('cmn_article_text: {}'.format(
-                                                #     cmn_article_text))
-                                            except:
-                                                cmn_article_text = None
+                                            articleBody = bs2.find_all(
+                                                'div', attrs={'itemprop': 'articleBody'})
+                                            # print('articleBody: {}'.format(
+                                            #     articleBody))
+                                        except:
+                                            articleBody = None
 
-                                            if len(cmn_article_text) > 0:
-                                                bodyclass = cmn_article_text[0].text
-                                                # print('cmn_article_text[0]: {}'.format(
-                                                #     cmn_article_text[0]))
-                                            else:
-                                                try:
-                                                    articleBody = bs2.find_all(
-                                                        'div', attrs={'itemprop': 'articleBody'})
-                                                    # print('articleBody: {}'.format(
-                                                    #     articleBody))
-                                                except:
-                                                    articleBody = None
-
-                                                if len(articleBody) > 0:
-                                                    bodyclass = articleBody[0].text
-                                                    # print('articleBody[0]: {}'.format(
-                                                    #     articleBody[0]))
-                                                else:
-                                                    bodyclass = ''
-
-                                            print('\tbodyclass: {}'.format(
-                                                bodyclass), file=logfile, flush=True)
-                                            body += bodyclass.strip().replace('\n', '\\n')
-                                            # print('\t\tbody: {}'.format(body),
-                                            #       file=logfile, flush=True)
-                                        except Exception as e:
-                                            print(e, file=logfile, flush=True)
-
-                                        # li.page_nex_prev があればクリックして次のページへ進む
-                                        nextpages = bs2.find_all(
-                                            'ul', attrs={'class': re.compile('.*?pagination_article_detail.*?')})
-                                        print('\tnextpages: {} {}'.format(
-                                            len(nextpages), nextpages), file=logfile, flush=True)
-                                        if len(nextpages) > 0:
-                                            try:
-                                                clickLink(fox, '次へ')
-                                            except:
-                                                break  # Message: Unable to locate element: 次へ
+                                        if len(articleBody) > 0:
+                                            bodyclass = articleBody[0].text
+                                            # print('articleBody[0]: {}'.format(
+                                            #     articleBody[0]))
                                         else:
-                                            break
+                                            bodyclass = ''
 
-                                        # time.sleep(600)
-                                        # break
-                                    except Exception as e:
-                                        print(e, file=logfile, flush=True)
-                                        break
+                                    print('\tbodyclass: {}'.format(
+                                        bodyclass), file=logfile, flush=True)
+                                    body += bodyclass.strip().replace('\n', '\\n')
+                                    # print('\t\tbody: {}'.format(body),
+                                    #       file=logfile, flush=True)
+                                except Exception as e:
+                                    print(e, file=logfile, flush=True)
 
                                 # データファイルに出力
                                 print('{}\t\t{}\t\t{}\t\t{}\t\t{}'.format(
-                                    category, title, pubdate, uri, body), file=datafile, flush=True)
+                                    category, title.replace('\n', ''), pubdate.replace('\n', ''), uri.replace('\n', ''), body), file=datafile, flush=True)
                             except Exception as e:
                                 print(e, file=logfile, flush=True)
 
